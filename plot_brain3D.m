@@ -5,33 +5,42 @@ function plot_brain3D(vals, plotInfo)
 
 %% select or set here color maps
 clrmap.brain = gray(128);                           % colormap for brain (T1, T2, CT, ...)
-% clrmap.chnls = jet(128);                            % colormap for values: jet
-clrmap.chnls = getColorMap('bwr', 128);             % colormap for values: blue - white - red
-% clrmap.chnls = getColorMap('bcwwmr', 128);          % colormap for values: blue - cyan - white - magenta - red
+
+if isfield(plotInfo, 'colorMap')
+    clrmap.chnls = plotInfo.colorMap;
+else
+    clrmap.chnls = jet(128);                            % default colormap for values: jet
+    % clrmap.chnls = getColorMap('bwr', 128);             % colormap for values: blue - white - red
+    % clrmap.chnls = getColorMap('bcwwmr', 128);          % colormap for values: blue - cyan - white - magenta - red
+end
 clrmap.fig = cat(1, clrmap.brain, clrmap.chnls);    % colormap of the figure
-alphaVal = 0.2;                                     % transparency of the colored values (0 = opaque)
+alphaVal = 0.2;                                     % transparency of the brain structure (1 = opaque)
 
-%% pass info from loaded brain (see getBrainData.m)
-VI = plotInfo.brain.VI;      % interpolated volume
-xi = plotInfo.brain.xi;      % interpolated x-axis, in [mm] of MNI coors
-yi = plotInfo.brain.yi;      % interpolated y-axis, in [mm] of MNI coors
-zi = plotInfo.brain.zi;      % interpolated z-axis, in [mm] of MNI coors
-assert(size(plotInfo.chnls,2) == size(vals,1));
-voxSize_new = plotInfo.brain.voxSize_new;
-V = linTransform(VI, [min(VI(:)), max(VI(:))], [0, 1]);
 
-%% isosurface 
-separationThreshold = 0.5;                  % (value 0.5 separates gray matter from the dark background). Other values 0 - 1 may work also fine
-fv = isosurface(V, separationThreshold);    % surface, vertex 
+%% isosurface of brain grey matter
+if ~isfield(plotInfo, 'fv')
+    % pass info from loaded brain (see getBrainData.m)
+    VI = plotInfo.brain.VI;      % interpolated volume
+    xi = plotInfo.brain.xi;      % interpolated x-axis, in [mm] of MNI coors
+    yi = plotInfo.brain.yi;      % interpolated y-axis, in [mm] of MNI coors
+    zi = plotInfo.brain.zi;      % interpolated z-axis, in [mm] of MNI coors
+    assert(size(plotInfo.chnls,2) == size(vals,1));
+    V = linTransform(VI, [min(VI(:)), max(VI(:))], [0, 1]);
+
+    separationThreshold = 0.5;                  % (value 0.5 separates gray matter from the dark background). Other values 0 - 1 may work also fine
+    fv = isosurface(V, separationThreshold);    % surface, vertex 
+else
+    fv = plotInfo.fv;
+end
 
 %% figure
 % --- figure
 f = figure('visible','on');
-set(f, 'Position', [100 -300 round(1.0*1120) round(1.0*840)]);
-%set(f, 'Position', [1 -479 2880 1472]);
-%set(f, 'Position', [1 41 1920 963]);
+set(f, 'Position', plotInfo.figurePosition);
 set(f, 'Colormap', clrmap.fig);
-set(gcf, 'Renderer','OpenGL');
+set(f, 'Renderer','OpenGL');
+set(f, 'InvertHardcopy','off');                 % preserves black background
+set(f, 'PaperPositionMode','auto');
 opengl('hardware');
 
 %% channel color limits
@@ -74,7 +83,7 @@ p = patch('Faces', [fv.faces(:,2),fv.faces(:,1),fv.faces(:,3)], ...
 lighting phong
 axis equal
 % colormap(gray(256))
-view(0,90)
+view(0,90);
 camlight headlight
 set(gca, 'color', [0 0 0])
 %set(gca, 'color', [1 1 1])
@@ -93,10 +102,10 @@ for ch = 1:size(plotInfo.chnls,2)
 end
 
 %% output directory
-if isfield(plotInfo, 'outDir')
-    outDir = [plotInfo.outDir  filesep 'model_3D'];
+if ~isfield(plotInfo, 'outDir')
+    outDir = [pwd filesep '3D_model'];
 else
-    outDir = [pwd filesep 'model_3D'];
+    outDir = plotInfo.outDir;
 end
 if ~exist(outDir, 'dir')
     mkdir(outDir);
@@ -109,32 +118,52 @@ else
     figname = 'notNamed';
 end
 
-%% animation loop (animated gif)
-outDir_gif = [outDir filesep 'gif_animations'];
-if ~exist(outDir_gif, 'dir')
-    mkdir(outDir_gif);
-end  
-filename = [outDir_gif filesep figname '.gif'];
-az = [-180:10:180];
-for n = 1:size(az,2)
-    view(az(n),0);
-    drawnow;
-    frame = getframe(f);
-    %frame = getframe(f, get(f, 'Position'));
-    im = frame2im(frame);
-    [imind,cm] = rgb2ind(im,256);
-    if n == 1;
-        imwrite(imind,cm,filename,'gif', 'Loopcount',inf);
+%% snapshots from different views
+for v = 1:size(plotInfo.model_views,1)
+    thisView = plotInfo.model_views(v,:);
+    view(thisView(1),thisView(2));
+    
+    % save snapshot
+    set(f, 'InvertHardcopy','off');                 % preserves black background
+    thisFigName = [figname '_view' num2str(v)];
+    if plotInfo.printResolution == 0
+        print(f, '-dpng','-r0', [outDir filesep thisFigName '.png']);
     else
-        imwrite(imind,cm,filename,'gif','WriteMode','append');
+        print(f, '-dpng','-r600', [outDir filesep thisFigName '.png']);
+    end    
+end
+
+
+%% animation loop (animated gif)
+if plotInfo.doAnimation_gif
+    outDir_gif = [outDir filesep 'gif_animations'];
+    if ~exist(outDir_gif, 'dir')
+        mkdir(outDir_gif);
+    end  
+    filename = [outDir_gif filesep figname '.gif'];
+    az = [-180:10:180];
+    for n = 1:size(az,2)
+        view(az(n),0);
+        drawnow;
+        frame = getframe(f);
+        %frame = getframe(f, get(f, 'Position'));
+        im = frame2im(frame);
+        [imind,cm] = rgb2ind(im,256);
+        if n == 1;
+            imwrite(imind,cm,filename,'gif', 'Loopcount',inf);
+        else
+            imwrite(imind,cm,filename,'gif','WriteMode','append');
+        end
     end
 end
 
 %% save
-set(f, 'InvertHardcopy','off');                 % preserves black background
-set(f, 'PaperPositionMode','auto');
 saveas(f, [outDir filesep figname '.fig']);
-print(f, '-dpng','-r600', [outDir filesep figname '.png']);
+if plotInfo.printResolution == 0
+    print(f, '-dpng','-r0', [outDir filesep figname '.png']);
+else
+    print(f, '-dpng','-r600', [outDir filesep figname '.png']);
+end
 close(f);    
 display(['Figure: ' figname ' stored in: ' outDir]);
 

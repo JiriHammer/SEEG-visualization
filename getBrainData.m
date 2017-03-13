@@ -13,7 +13,8 @@ if isempty(spm_dir)
 end
 
 %% load normalized brain MRI (wT1.nii)
-fileName = ['.' filesep plotInfo.file2load];
+%fileName = ['.' filesep plotInfo.MRI_file];
+fileName = plotInfo.MRI_file;
 assert(exist(fileName,'file') == 2);
 brain.hdr = spm_vol(fileName);
 [brain.vol, brain.xyz] = spm_read_vols(brain.hdr);
@@ -62,3 +63,11 @@ brain.xi = xi;
 brain.yi = yi;
 brain.zi = zi;
 brain.voxSize_new = voxSize_new;
+
+%% isosurface for 3D model
+if strcmp(plotInfo.plottingStyle, '3D_model')
+    display('computing isosurface for 3D brain model ...');
+    V = linTransform(VI, [min(VI(:)), max(VI(:))], [0, 1]);
+    separationThreshold = 0.5;                  % (value 0.5 separates gray matter from the dark background). Other values 0 - 1 may work also fine
+    plotInfo.fv = isosurface(V, separationThreshold);    % surface, vertex 
+end

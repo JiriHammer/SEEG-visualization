@@ -5,9 +5,14 @@ function plot_brainSlices(vals, plotInfo)
 
 %% color maps
 clrmap.brain = gray(128);                           % colormap for brain (T1, T2, CT, ...)
-% clrmap.chnls = jet(128);                            % colormap for values: jet
-clrmap.chnls = getColorMap('bwr', 128);             % colormap for values: blue - white - red
-% clrmap.chnls = getColorMap('bcwwmr', 128);          % colormap for values: blue - cyan - white - magenta - red
+
+if isfield(plotInfo, 'colorMap')
+    clrmap.chnls = plotInfo.colorMap;
+else
+    clrmap.chnls = jet(128);                            % default colormap for values: jet
+    % clrmap.chnls = getColorMap('bwr', 128);             % colormap for values: blue - white - red
+    % clrmap.chnls = getColorMap('bcwwmr', 128);          % colormap for values: blue - cyan - white - magenta - red
+end
 clrmap.fig = cat(1, clrmap.brain, clrmap.chnls);    % colormap of the figure
 alphaVal = 1.0;                                     % transparency of the colored values (1 = opaque)
 
@@ -66,7 +71,7 @@ Z = ones(size(VI));     % dummy variable for image
 %% ------------------------- AXIAL SLICES ---------------------------------
 if ismember('axial', plotInfo.slicePlanes)
 % --- number of slices
-sliceStep = plotInfo.sliceStep;            % in [mm]
+sliceStep = 1.5;            % in [mm]
 n_maxSlices = 120;
 dim = 3;
 min_mni = min(mni_coors(:,dim));
@@ -83,8 +88,8 @@ end
 
 % --- figure
 f = figure('visible','on');
-set(f, 'Position', [1 -479 2880 1472]);
-%set(f, 'Position', [1 41 1920 963]);
+set(f, 'Position', plotInfo.figurePosition);
+%set(f, 'Position', [1 -479 2880 1472]);
 set(f, 'Colormap', clrmap.fig);
 
 nRows = floor(sqrt(n_slices/2));    % good coverage when: nCols = 2 * nRows
@@ -136,9 +141,12 @@ for n = 1:n_slices
         txt_L = xi(1) + (xi(end)-xi(1))/100*5;        % ~ 5% offset from left  side
         txt_R = xi(end) - (xi(end)-xi(1))/100*5;      % ~ 5% offset from right side
         txt_U = yi(end) - (yi(end)-yi(1))/100*5;      % ~ 5% offset from upper side
+        txt_D = yi(1) + (yi(end)-yi(1))/100*5;        % ~ 5% offset from lower side
         text(txt_L, txt_U, 'R', 'fonts',12, 'fontw','bold', 'HorizontalAlignment','center', 'Color','w');
         text(txt_R, txt_U, 'L', 'fonts',12, 'fontw','bold', 'HorizontalAlignment','center', 'Color','w');
     end    
+    % MNI coor
+    text(txt_L, txt_D,['z = ' num2str(zi(iz))], 'fonts',12, 'fontw','bold', 'HorizontalAlignment','left', 'Color','w');
 end
 
 % --- colorbar
@@ -180,7 +188,11 @@ end
 % --- save
 set(f, 'PaperPositionMode','auto');
 saveas(f, [outDir filesep figname '.fig']);
-print(f, '-dpng','-r600', [outDir filesep figname '.png']);
+if plotInfo.printResolution == 0
+    print(f, '-dpng','-r0', [outDir filesep figname '.png']);
+else
+    print(f, '-dpng','-r600', [outDir filesep figname '.png']);
+end
 close(f);    
 display(['Figure: ' figname ' stored in: ' outDir]);
 end
@@ -188,7 +200,7 @@ end
 %% ------------------------- SAGITTAL SLICES ---------------------------------
 if ismember('sagittal', plotInfo.slicePlanes)
 % --- number of slices
-sliceStep = plotInfo.sliceStep;            % in [mm]
+sliceStep = 1.5;            % in [mm]
 n_maxSlices = 120;
 dim = 1;
 min_mni = min(mni_coors(:,dim));
@@ -205,8 +217,8 @@ end
 
 % --- figure
 f = figure('visible','on');
-set(f, 'Position', [1 -479 2880 1472]);
-%set(f, 'Position', [1 41 1920 963]);
+set(f, 'Position', plotInfo.figurePosition);
+%set(f, 'Position', [1 -479 2880 1472]);
 set(f, 'Colormap', clrmap.fig);
 
 nRows = floor(sqrt(n_slices/2));    % good coverage when: nCols = 2 * nRows
@@ -254,13 +266,17 @@ for n = 1:n_slices
     
     % left/right orientation
     if n == 1
-        txt_M = yi(1) + (yi(end)-yi(1))/100*50;        % ~ 50% offset from left  side
+        txt_L = yi(1) + (yi(end)-yi(1))/100*5;        % ~ 5% offset from left  side
+        txt_M = yi(1) + (yi(end)-yi(1))/100*50;       % ~ 50% offset from left  side
         txt_U = zi(end) - (zi(end)-zi(1))/100*5;      % ~ 5% offset from upper side
+        txt_D = zi(1) + (zi(end)-zi(1))/100*5;        % ~ 5% offset from lower side
         text(txt_M, txt_U, 'L', 'fonts',12, 'fontw','bold', 'HorizontalAlignment','center', 'Color','w');
     end    
     if n == n_slices
         text(txt_M, txt_U, 'R', 'fonts',12, 'fontw','bold', 'HorizontalAlignment','center', 'Color','w');
     end
+    % MNI coor
+    text(txt_L, txt_D,['x = ' num2str(xi(ix))], 'fonts',12, 'fontw','bold', 'HorizontalAlignment','left', 'Color','w');
 end
 
 % --- colorbar
@@ -302,7 +318,11 @@ end
 % --- save
 set(f, 'PaperPositionMode','auto');
 saveas(f, [outDir filesep figname '.fig']);
-print(f, '-dpng','-r600', [outDir filesep figname '.png']);
+if plotInfo.printResolution == 0
+    print(f, '-dpng','-r0', [outDir filesep figname '.png']);
+else
+    print(f, '-dpng','-r600', [outDir filesep figname '.png']);
+end
 close(f);    
 display(['Figure: ' figname ' stored in: ' outDir]);
 end
@@ -310,7 +330,7 @@ end
 %% ------------------------- CORONAL SLICES ---------------------------------
 if ismember('coronal', plotInfo.slicePlanes)
 % --- number of slices
-sliceStep = plotInfo.sliceStep;            % in [mm]
+sliceStep = 1.5;            % in [mm]
 n_maxSlices = 120;
 dim = 2;
 min_mni = min(mni_coors(:,dim));
@@ -327,8 +347,8 @@ end
 
 % --- figure
 f = figure('visible','on');
-set(f, 'Position', [1 -479 2880 1472]);
-%set(f, 'Position', [1 41 1920 963]);
+set(f, 'Position', plotInfo.figurePosition);
+%set(f, 'Position', [1 -479 2880 1472]);
 set(f, 'Colormap', clrmap.fig);
 
 nRows = floor(sqrt(n_slices/2));    % good coverage when: nCols = 2 * nRows
@@ -379,9 +399,12 @@ for n = 1:n_slices
         txt_L = xi(1) + (xi(end)-xi(1))/100*5;        % ~ 5% offset from left  side
         txt_R = xi(end) - (xi(end)-xi(1))/100*5;      % ~ 5% offset from right side
         txt_U = zi(end) - (zi(end)-zi(1))/100*5;      % ~ 5% offset from upper side
+        txt_D = zi(1) + (zi(end)-zi(1))/100*5;        % ~ 5% offset from lower side
         text(txt_L, txt_U, 'R', 'fonts',12, 'fontw','bold', 'HorizontalAlignment','center', 'Color','w');
         text(txt_R, txt_U, 'L', 'fonts',12, 'fontw','bold', 'HorizontalAlignment','center', 'Color','w');
     end    
+    % MNI coor
+    text(txt_L, txt_D,['y = ' num2str(yi(iy))], 'fonts',12, 'fontw','bold', 'HorizontalAlignment','left', 'Color','w');    
 end
 
 % --- colorbar
@@ -423,7 +446,11 @@ end
 % --- save
 set(f, 'PaperPositionMode','auto');
 saveas(f, [outDir filesep figname '.fig']);
-print(f, '-dpng','-r600', [outDir filesep figname '.png']);
+if plotInfo.printResolution == 0
+    print(f, '-dpng','-r0', [outDir filesep figname '.png']);
+else
+    print(f, '-dpng','-r600', [outDir filesep figname '.png']);
+end
 close(f);    
 display(['Figure: ' figname ' stored in: ' outDir]);
 end
