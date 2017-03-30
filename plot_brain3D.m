@@ -20,23 +20,26 @@ alphaVal = 0.2;                                     % transparency of the brain 
 %% isosurface of brain grey matter
 if ~isfield(plotInfo, 'fv')
     % pass info from loaded brain (see getBrainData.m)
-    VI = plotInfo.brain.VI;      % interpolated volume
-    xi = plotInfo.brain.xi;      % interpolated x-axis, in [mm] of MNI coors
-    yi = plotInfo.brain.yi;      % interpolated y-axis, in [mm] of MNI coors
-    zi = plotInfo.brain.zi;      % interpolated z-axis, in [mm] of MNI coors
-    assert(size(plotInfo.chnls,2) == size(vals,1));
+    VI = plotInfo.brain.VI;      % interpolated volume    
     V = linTransform(VI, [min(VI(:)), max(VI(:))], [0, 1]);
-
     separationThreshold = 0.5;                  % (value 0.5 separates gray matter from the dark background). Other values 0 - 1 may work also fine
+    fprintf('computing isosurface for 3D brain model ...' ); %no end of line
     fv = isosurface(V, separationThreshold);    % surface, vertex 
+    disp(' done');
 else
     fv = plotInfo.fv;
 end
+xi = plotInfo.brain.xi;      % interpolated x-axis, in [mm] of MNI coors
+yi = plotInfo.brain.yi;      % interpolated y-axis, in [mm] of MNI coors
+zi = plotInfo.brain.zi;      % interpolated z-axis, in [mm] of MNI coors
+assert(size(plotInfo.chnls,2) == size(vals,1),'the number of channels in mni and vals shoudl be the same');
 
 %% figure
 % --- figure
 f = figure('visible','on');
-set(f, 'Position', plotInfo.figurePosition);
+if isfield(plotInfo, 'figurePosition')
+    set(f, 'Position', plotInfo.figurePosition); %only set position, if defined - kamil
+end
 set(f, 'Colormap', clrmap.fig);
 set(f, 'Renderer','OpenGL');
 set(f, 'InvertHardcopy','off');                 % preserves black background
@@ -93,7 +96,7 @@ material dull;
 set(gca, 'XTick',[], 'YTick',[], 'ZTick',[]);
 
 %% channels
-circle_size = 28;
+circle_size = plotInfo.circle_size; %28;
 for ch = 1:size(plotInfo.chnls,2)
     i_clr = cVals2cInds(vals(ch), [clims(1),clims(2)], size(clrmap.brain,1)+[1,size(clrmap.chnls,1)]);
     clr = clrmap.fig(i_clr,:);
@@ -102,14 +105,14 @@ for ch = 1:size(plotInfo.chnls,2)
 end
 
 %% output directory
-if ~isfield(plotInfo, 'outDir')
-    outDir = [pwd filesep '3D_model'];
-else
-    outDir = plotInfo.outDir;
+if isfield(plotInfo, 'savepng') && plotInfo.savepng==true || isfield(plotInfo, 'savefig') && plotInfo.savefig==true || plotInfo.doAnimation_gif
+    %only create dir if needed
+    assert(isfield(plotInfo, 'outDir'),'output dir not defined');
+    outDir = plotInfo.outDir;    
+    if ~exist(outDir, 'dir')
+        mkdir(outDir);
+    end  
 end
-if ~exist(outDir, 'dir')
-    mkdir(outDir);
-end  
 
 %% figure name
 if isfield(plotInfo, 'figName')
@@ -119,18 +122,32 @@ else
 end
 
 %% snapshots from different views
-for v = 1:size(plotInfo.model_views,1)
-    thisView = plotInfo.model_views(v,:);
+model_views = zeros(numel(plotInfo.slicePlanes),2); %create view according to namedslicePlanes - kamil
+for s = 1: numel(plotInfo.slicePlanes)
+    if strncmp(plotInfo.slicePlanes{s},'coronal',1) %
+        model_views(s,:) = [0 0];
+    elseif strncmp(plotInfo.slicePlanes{s},'sagittal',1) %
+        model_views(s,:) = [90 0];
+    elseif strncmp(plotInfo.slicePlanes{s},'axial',1) %
+        model_views(s,:) = [0 89.999]; %For some odd reason (camera light?), view(0,90) makes grey background...
+    end
+end
+
+for v = 1:size(model_views,1)
+    thisView = model_views(v,:);
     view(thisView(1),thisView(2));
     
     % save snapshot
-    set(f, 'InvertHardcopy','off');                 % preserves black background
-    thisFigName = [figname '_view' num2str(v)];
-    if plotInfo.printResolution == 0
-        print(f, '-dpng','-r0', [outDir filesep thisFigName '.png']);
-    else
-        print(f, '-dpng','-r600', [outDir filesep thisFigName '.png']);
-    end    
+    if isfield(plotInfo, 'savepng') && plotInfo.savepng==true
+        set(f, 'InvertHardcopy','off');                 % preserves black background
+        thisFigName = [figname '_view' num2str(v)];
+        if plotInfo.printResolution == 0
+            print(f, '-dpng','-r0', [outDir filesep thisFigName '.png']);
+        else
+            print(f, '-dpng','-r600', [outDir filesep thisFigName '.png']);
+        end
+        display(['Figure: ' thisFigName '.png stored in: ' outDir]);
+    end
 end
 
 
@@ -158,12 +175,20 @@ if plotInfo.doAnimation_gif
 end
 
 %% save
-saveas(f, [outDir filesep figname '.fig']);
-if plotInfo.printResolution == 0
-    print(f, '-dpng','-r0', [outDir filesep figname '.png']);
-else
-    print(f, '-dpng','-r600', [outDir filesep figname '.png']);
+if isfield(plotInfo, 'savefig') && plotInfo.savefig==true
+    saveas(f, [outDir filesep figname '.fig']);
+    display(['Figure: ' figname '.fig stored in: ' outDir]);
 end
-close(f);    
-display(['Figure: ' figname ' stored in: ' outDir]);
+if isfield(plotInfo, 'savepng') && plotInfo.savepng==true && size(model_views,1)==0 %model_views already stored, no need to store again
+    if plotInfo.printResolution == 0
+        print(f, '-dpng','-r0', [outDir filesep figname '.png']);
+    else
+        print(f, '-dpng','-r600', [outDir filesep figname '.png']);
+    end
+    display(['Figure: ' figname '.png stored in: ' outDir]);
+end
+if isfield(plotInfo, 'savepng') && plotInfo.savepng==true || isfield(plotInfo, 'savefig') && plotInfo.savefig==true
+    close(f);    %close figure if it was saved 
+end
+
 

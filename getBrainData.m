@@ -1,4 +1,4 @@
-function brain = getBrainData(plotInfo)
+function [brain fv] = getBrainData(plotInfo)
 % loads 3D brain MRI or CT = brain
 % interpolates
 % finds selected channels to plot
@@ -6,10 +6,11 @@ function brain = getBrainData(plotInfo)
 
 % (c) Jiri, Jan17
 
-%% is SPM12 installed ?
-spm_dir = what('spm12');
+fv = [];
+%% is SPM installed ?
+spm_dir = [what('spm8') ; what('spm12')];
 if isempty(spm_dir) 
-    error('SPM12 toolbox required. Install SPM12 and add it to pathdef.m !'); 
+    error('SPM8 or SPM12 toolbox required. Install SPM and add it to pathdef.m !'); 
 end
 
 %% load normalized brain MRI (wT1.nii)
@@ -66,8 +67,13 @@ brain.voxSize_new = voxSize_new;
 
 %% isosurface for 3D model
 if strcmp(plotInfo.plottingStyle, '3D_model')
-    display('computing isosurface for 3D brain model ...');
-    V = linTransform(VI, [min(VI(:)), max(VI(:))], [0, 1]);
-    separationThreshold = 0.5;                  % (value 0.5 separates gray matter from the dark background). Other values 0 - 1 may work also fine
-    plotInfo.fv = isosurface(V, separationThreshold);    % surface, vertex 
+    if ~isfield(plotInfo, 'fv') %compute the isosurface only if not already part od plotInfo - kamil
+        fprintf('computing isosurface for 3D brain model ...' ); %no end of line
+        V = linTransform(VI, [min(VI(:)), max(VI(:))], [0, 1]);
+        separationThreshold = 0.5;                  % (value 0.5 separates gray matter from the dark background). Other values 0 - 1 may work also fine
+        fv = isosurface(V, separationThreshold);    % surface, vertex         
+        disp(' done');
+    else
+        fv = plotInfo.fv;
+    end
 end
