@@ -22,7 +22,8 @@ end
 %addpath(genpath(dir_toolbox.path)); %kamil - path to be saved manually
 %dir_curr = pwd;
 %cd(dir_toolbox.path);
-outputDir_p73 ='d:\eeg\motol\pacienti\p073 Pech VT6\Aedist\figures\'; 
+outputDir_p73 ='d:\eeg\motol\pacienti\p136 Men VT20\figures\';
+niiFile_p136 = 'd:\eeg\motol\pacienti\p136 Men VT20\koregistrace_JH\wT1.nii';
 %% ######################## USER INTERFACE ##################################
 % --- interface structure 'plotInfo'
 plotInfo = struct(...           % user interface structure: holds most (but not all!) of the user settings
@@ -42,17 +43,19 @@ plotInfo = struct(...           % user interface structure: holds most (but not 
     'doAnimation_gif', false, ...                         % GIF animation of 3D brain model (takes longer time)
     'savefig',false,...                 %if save FIG figures 
     'savepng',true, ...               %if sace png figures
-    'circle_size',56    ....   %size of the circles in 3D plot - 28  
+    'circle_size',56,    ....   %size of the circles in 3D plot - 28
+    'outputType','SUBJECT-SPECIFIC SLICES', ... % ktere obrazky se maji generovat SUBJECT-SPECIFIC SLICES | COLIN27 BRAIN SLICES | 3D BRAIN MODEL
+    'niiFileSubject', niiFile_p136 ... 
 );
 
 % --- load channels MNI coors (variable 'data_channels' in 'channelsInfo.mat')
 %load('channelsInfo.mat', 'data_channels');
-assert(exist('mni_channels','var') == 1,'MNI coordinates var mni_channels is missing');
+assert(exist('mni_channels','var') == 1,'MNI coordinates var mni_channels is missing'); %ziskam z headeru pomoci CHHeader.GetMNI
 plotInfo.chnls = mni_channels;             % !!! set here your MNI coordinates as a structure array with the same fields as in this example!
 
 % --- channels values to plot, format = [channels x time]
 %vals_channels = randn(size(data_channels,2),2);   % !!! set here your channel valus, format = [channels x time], in this example: 2 time points of channel values
-%vals_channels = ones(size(data_channels,2),1);    % vsechny elektrody stejnou barvou, jeden casovy okamzik
+vals_channels = ones(size(mni_channels,2),1);    % vsechny elektrody stejnou barvou, jeden casovy okamzik
 assert(exist('vals_channels','var')==1,'channel values var vals_channels is missing');
 
 % --- channels color scale
@@ -67,26 +70,29 @@ if exist('brainsurface','var') && ~isempty(brainsurface)
     plotInfo.fv = brainsurface;  %already computed isosurface - kamil
 end 
 
+switch plotInfo.outputType
+    
 %% ################## (A) COLIN27 BRAIN SLICES ##########################
 % colin27-specific: get brain template for slices
-if(false)
-    plotInfo.plottingStyle = 'slices';
-    plotInfo.MRI_file = [plotInfo.MRI_fileDir filesep 'wT1_subject.nii'];       % subject specific brain normalized to MNI space
-    plotInfo.brain = getBrainData(plotInfo);
+    case 'COLIN27 BRAIN SLICES'
+        
+plotInfo.plottingStyle = 'slices';
+plotInfo.MRI_file = [plotInfo.MRI_fileDir filesep 'wT1_subject.nii'];       % subject specific brain normalized to MNI space
+plotInfo.brain = getBrainData(plotInfo);
 
-    % colin27-specific: plot time-series of brain slices (1 figure / time point)
-    plotInfo.outDir = [plotInfo.outputDir filesep 'slices_normalizedBrain'];
-    for t = 1:size(vals_channels,2)          % go through all time points
-        plotInfo.figName = [plotInfo.figureNamePrefix 'colin_time' num2str(t)];
-        plot_brainSlices(vals_channels(:,t), plotInfo);
-    end    
-end
-
+% colin27-specific: plot time-series of brain slices (1 figure / time point)
+plotInfo.outDir = [plotInfo.outputDir filesep 'slices_normalizedBrain'];
+for t = 1:size(vals_channels,2)          % go through all time points
+    plotInfo.figName = [plotInfo.figureNamePrefix 'colin_time' num2str(t)];
+    plot_brainSlices(vals_channels(:,t), plotInfo);
+end    
 
 
 %% ################## (B) 3D BRAIN MODEL ##########################
 % colin27-specific (but works on other brain's too! Requires segmented grey matter, normalized to MNI space)
 % get brain template for 3D model
+    case '3D BRAIN MODEL' 
+
 plotInfo.plottingStyle = '3D_model';
 plotInfo.size_interpolate = 1;          % consider larger voxels for faster & easier manipulation
 plotInfo.MRI_file = [plotInfo.MRI_fileDir filesep  'wc1T1_colin27.nii'];       % gray matter (segmented from colin27 by SPM12)
@@ -101,12 +107,14 @@ for t = 1:size(vals_channels,2)          % go thru all time points
     plot_brain3D(vals_channels(:,t), plotInfo);
 end
 
-return; %dal uz nechci pokracovat
+
 
 %% ################## (C) SUBJECT-SPECIFIC SLICES ##########################
 % subject-specific: get brain info for slices
+    case 'SUBJECT-SPECIFIC SLICES'
+        
 plotInfo.plottingStyle = 'slices';
-plotInfo.MRI_file = [plotInfo.MRI_fileDir filesep 'wT1_subject.nii'];       % subject specific brain normalized to MNI space
+plotInfo.MRI_file = plotInfo.niiFileSubject;       % subject specific brain normalized to MNI space
 plotInfo.brain = getBrainData(plotInfo);
 
 % subject-specific: plot time-series of brain slices (1 figure / time point)
@@ -118,5 +126,7 @@ end
 
 
 %% change back to previous directory
-display('Done. Thanks for trying this tutorial out!  :o) ');
-cd(dir_curr);
+end
+disp('hotovo');
+%display('Done. Thanks for trying this tutorial out!  :o) ');
+%cd(dir_curr);
