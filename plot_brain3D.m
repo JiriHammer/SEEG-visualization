@@ -95,14 +95,6 @@ view(90,0)
 material dull;
 set(gca, 'XTick',[], 'YTick',[], 'ZTick',[]);
 
-%% channels
-circle_size = plotInfo.circle_size; %28;
-for ch = 1:size(plotInfo.chnls,2)
-    i_clr = cVals2cInds(vals(ch), [clims(1),clims(2)], size(clrmap.brain,1)+[1,size(clrmap.chnls,1)]);
-    clr = clrmap.fig(i_clr,:);
-    [ix,iy,iz] = mni2vox(plotInfo.chnls(ch).MNI_x, plotInfo.chnls(ch).MNI_y, plotInfo.chnls(ch).MNI_z, xi, yi, zi); % index of MNI coor
-    scatter3(ix,iy,iz, circle_size, 'MarkerFaceColor',clr, 'MarkerEdgeColor','none');
-end
 
 %% output directory
 if isfield(plotInfo, 'savepng') && plotInfo.savepng==true || isfield(plotInfo, 'savefig') && plotInfo.savefig==true || plotInfo.doAnimation_gif
@@ -122,14 +114,14 @@ else
 end
 
 %% snapshots from different views
-model_views = zeros(numel(plotInfo.slicePlanes),2); %create view according to namedslicePlanes - kamil
-for s = 1: numel(plotInfo.slicePlanes)
-    if strncmp(plotInfo.slicePlanes{s},'coronal',1) %
-        model_views(s,:) = [0 0];
-    elseif strncmp(plotInfo.slicePlanes{s},'sagittal',1) %
-        model_views(s,:) = [90 0];
-    elseif strncmp(plotInfo.slicePlanes{s},'axial',1) %
-        model_views(s,:) = [0 89.999]; %For some odd reason (camera light?), view(0,90) makes grey background...
+model_views = zeros(numel(plotInfo.slicePlanes),2); %create view according to named slicePlanes - kamil
+for v = 1: numel(plotInfo.slicePlanes)
+    if strncmp(plotInfo.slicePlanes{v},'coronal',1) %
+        model_views(v,:) = [0 0];
+    elseif strncmp(plotInfo.slicePlanes{v},'sagittal',1) %
+        model_views(v,:) = [90 0];
+    elseif strncmp(plotInfo.slicePlanes{v},'axial',1) %
+        model_views(v,:) = [0 89.999]; %For some odd reason (camera light?), view(0,90) makes grey background...
     end
 end
 
@@ -137,6 +129,22 @@ for v = 1:size(model_views,1)
     thisView = model_views(v,:);
     view(thisView(1),thisView(2));
     
+    % channels - vykreslim je tak, aby byly v popredi - kamil 24.7.2017
+    circle_size = plotInfo.circle_size; %28;
+    handles_s = zeros(size(plotInfo.chnls,2),1);
+    for ch = 1:size(plotInfo.chnls,2)
+        i_clr = cVals2cInds(vals(ch), [clims(1),clims(2)], size(clrmap.brain,1)+[1,size(clrmap.chnls,1)]);
+        clr = clrmap.fig(i_clr,:);
+        [ix,iy,iz] = mni2vox(plotInfo.chnls(ch).MNI_x, plotInfo.chnls(ch).MNI_y, plotInfo.chnls(ch).MNI_z, xi, yi, zi); % index of MNI coor
+        if strncmp(plotInfo.slicePlanes{v},'coronal',1) %
+            iy = min(fv.vertices(:,1)); %minimalni y je uplne vepredu u tohoto pohledu
+        elseif strncmp(plotInfo.slicePlanes{v},'sagittal',1) %
+            ix = max(fv.vertices(:,2)); %maximalni x je uplne vepredu u tohoto pohledu
+        elseif strncmp(plotInfo.slicePlanes{v},'axial',1) %
+            iz = max(fv.vertices(:,3)); %maximalni z je ulne vepredu u tohoto pohledu
+        end
+        handles_s(ch) = scatter3(ix,iy,iz, circle_size, 'MarkerFaceColor',clr, 'MarkerEdgeColor','none');
+    end
     % save snapshot
     if isfield(plotInfo, 'savepng') && plotInfo.savepng==true
         set(f, 'InvertHardcopy','off');                 % preserves black background
@@ -148,10 +156,14 @@ for v = 1:size(model_views,1)
         end
         display(['Figure: ' thisFigName '.png stored in: ' outDir]);
     end
+    for ch = 1:size(plotInfo.chnls,2)
+        delete(handles_s(ch)); %scatter zase smazu, a nakreslim ho z jineho pohledu
+    end
 end
 
 
 %% animation loop (animated gif)
+%tohle ted nebude fungovat, zadne hodnoty kanalu nevykresleny - kamil 24.7.2017
 if plotInfo.doAnimation_gif
     outDir_gif = [outDir filesep 'gif_animations'];
     if ~exist(outDir_gif, 'dir')
@@ -175,10 +187,12 @@ if plotInfo.doAnimation_gif
 end
 
 %% save
+%tohle ted nebude fungovat, zadne hodnoty kanalu nevykresleny - kamil 24.7.2017
 if isfield(plotInfo, 'savefig') && plotInfo.savefig==true
     saveas(f, [outDir filesep figname '.fig']);
     display(['Figure: ' figname '.fig stored in: ' outDir]);
 end
+%tohle moc nechapu naco tady je , png uz je ulozeny
 if isfield(plotInfo, 'savepng') && plotInfo.savepng==true && size(model_views,1)==0 %model_views already stored, no need to store again
     if plotInfo.printResolution == 0
         print(f, '-dpng','-r0', [outDir filesep figname '.png']);
