@@ -22,16 +22,27 @@ end
 %addpath(genpath(dir_toolbox.path)); %kamil - path to be saved manually
 %dir_curr = pwd;
 %cd(dir_toolbox.path);
-outputDir_p73 ='d:\eeg\motol\pacienti\p136 Men VT20\figures\';
-niiFile_p136 = 'd:\eeg\motol\pacienti\p136 Men VT20\koregistrace_JH\wT1.nii';
+
+assert(exist('outputDir','var')>0,'nedefinovan vystupni adresar');
+%outputDir ='d:\eeg\motol\pacienti\p073 Pech VT6\figures\';
+
+niiFile = 'koregistrace_JH\wT1.nii'; %pouziva se jen pri  'SUBJECT-SPECIFIC SLICES'
+
+if ~exist('figureNamePrefix','var')
+    figureNamePrefix = 'myTest_';
+end
+
+if ~exist('figureVisible','var')
+    figureVisible = 'on';
+end
 %% ######################## USER INTERFACE ##################################
 % --- interface structure 'plotInfo'
 plotInfo = struct(...           % user interface structure: holds most (but not all!) of the user settings
-    'outputDir',outputDir_p73, ...   % output directory, where the plots are saved
-    'figureNamePrefix', 'myTest_', ...                  % figure name prefix. Program adds automatic suffix to each figure.
+    'outputDir',outputDir, ...   % output directory, where the plots are saved
+    'figureNamePrefix', figureNamePrefix, ...                  % figure name prefix. Program adds automatic suffix to each figure.
     'figurePosition', [1281 -89 1920 964], ...           % position of a figure on screen. For whole screen, evoke a figure, maximize it and type: get(gcf, 'Position')
-    'printResolution', 0, ...                           % choices: 0 (= screen resolution) or 600 (= dpi). Resolution of the figures.                          
-    'colorScale', [0 0.7], ...                               % for example, [-10 10]. If empty, programs adjusts colorscale to 5 & 95 percentile of the data.
+    'printResolution', 300, ...                           % choices: 0 (= screen resolution) or >0  (= dpi). Resolution of the figures.                          
+    'colorScale', [], ... %[0 0.7], ...                               % for example, [-10 10]. If empty, programs adjusts colorscale to 5 & 95 percentile of the data.
     'colorMap', jet(128), ...                           % colormap for channel values
     'MRI_fileDir', dir_toolbox.path, ...                % full path to brain MRI NIFTI (.nii) file. Must be normalized to MNI space!
     'size_interpolate', 1.0, ...                        % in [mm], voxel size to which the brain is interpolated; 1.0 means no interpolation
@@ -44,8 +55,9 @@ plotInfo = struct(...           % user interface structure: holds most (but not 
     'savefig',false,...                 %if save FIG figures 
     'savepng',true, ...               %if sace png figures
     'circle_size',56,    ....   %size of the circles in 3D plot - 28
-    'outputType','SUBJECT-SPECIFIC SLICES', ... % ktere obrazky se maji generovat SUBJECT-SPECIFIC SLICES | COLIN27 BRAIN SLICES | 3D BRAIN MODEL
-    'niiFileSubject', niiFile_p136 ... 
+    'outputType','3D BRAIN MODEL', ... % ktere obrazky se maji generovat SUBJECT-SPECIFIC SLICES | COLIN27 BRAIN SLICES | 3D BRAIN MODEL
+    'niiFileSubject', niiFile, ... 
+    'figureVisible',figureVisible ...
 );
 
 % --- load channels MNI coors (variable 'data_channels' in 'channelsInfo.mat')
@@ -53,15 +65,21 @@ plotInfo = struct(...           % user interface structure: holds most (but not 
 assert(exist('mni_channels','var') == 1,'MNI coordinates var mni_channels is missing'); %ziskam z headeru pomoci CHHeader.GetMNI
 plotInfo.chnls = mni_channels;             % !!! set here your MNI coordinates as a structure array with the same fields as in this example!
 
+if exist('names_channels','var') && ~isempty(names_channels);
+   plotInfo.chnames = names_channels;  % jmena kanalu, pokud existuji
+end
+
 % --- channels values to plot, format = [channels x time]
 %vals_channels = randn(size(data_channels,2),2);   % !!! set here your channel valus, format = [channels x time], in this example: 2 time points of channel values
-vals_channels = ones(size(mni_channels,2),1);    % vsechny elektrody stejnou barvou, jeden casovy okamzik
+%vals_channels = ones(size(mni_channels,2),1);    % vsechny elektrody stejnou barvou, jeden casovy okamzik
 assert(exist('vals_channels','var')==1,'channel values var vals_channels is missing');
 
 % --- channels color scale
 if isempty(plotInfo.colorScale)
-    clims = [prctile(vals_channels(:),5), prctile(vals_channels(:),95)]; clims = max(abs(clims)); 
-    plotInfo.chnl_clims = [-clims, clims];
+    clims = [prctile(vals_channels(:),5), prctile(vals_channels(:),95)]; 
+    %clims = max(abs(clims)); 
+    if clims(1) == clims(2), clims = sort ( [0 max(vals_channels)] );  end %pokud je napriklad jen jedna hodnota    
+    plotInfo.chnl_clims = clims;
 else
     plotInfo.chnl_clims = plotInfo.colorScale;
 end
@@ -103,7 +121,8 @@ brainsurface = plotInfo.fv; %save for later use
 plotInfo.outDir = [plotInfo.outputDir filesep '3D_model'];
 for t = 1:size(vals_channels,2)          % go thru all time points
     disp(['Time point ' num2str(t)]);
-    plotInfo.figName = [plotInfo.figureNamePrefix 'colin_time' num2str(t)];
+    nameSuffix = '';% puvodne 'colin_time' num2str(t) - kamil - nepotrebuju to na nic, kazdy cas ma u me jiny pocet kanaly
+    plotInfo.figName = [plotInfo.figureNamePrefix nameSuffix]; 
     plot_brain3D(vals_channels(:,t), plotInfo);
 end
 

@@ -36,7 +36,7 @@ assert(size(plotInfo.chnls,2) == size(vals,1),'the number of channels in mni and
 
 %% figure
 % --- figure
-f = figure('visible','on');
+f = figure('visible',plotInfo.figureVisible); %kupodivu to funguje, i kdyz je figure invisible - kamil 25.7.2017
 if isfield(plotInfo, 'figurePosition')
     set(f, 'Position', plotInfo.figurePosition); %only set position, if defined - kamil
 end
@@ -131,33 +131,40 @@ for v = 1:size(model_views,1)
     
     % channels - vykreslim je tak, aby byly v popredi - kamil 24.7.2017
     circle_size = plotInfo.circle_size; %28;
-    handles_s = zeros(size(plotInfo.chnls,2),1);
+    handles_s = zeros(size(plotInfo.chnls,2),2); %druhy sloupec je na names  
     for ch = 1:size(plotInfo.chnls,2)
         i_clr = cVals2cInds(vals(ch), [clims(1),clims(2)], size(clrmap.brain,1)+[1,size(clrmap.chnls,1)]);
         clr = clrmap.fig(i_clr,:);
-        [ix,iy,iz] = mni2vox(plotInfo.chnls(ch).MNI_x, plotInfo.chnls(ch).MNI_y, plotInfo.chnls(ch).MNI_z, xi, yi, zi); % index of MNI coor
-        if strncmp(plotInfo.slicePlanes{v},'coronal',1) %
-            iy = min(fv.vertices(:,1)); %minimalni y je uplne vepredu u tohoto pohledu
-        elseif strncmp(plotInfo.slicePlanes{v},'sagittal',1) %
-            ix = max(fv.vertices(:,2)); %maximalni x je uplne vepredu u tohoto pohledu
-        elseif strncmp(plotInfo.slicePlanes{v},'axial',1) %
-            iz = max(fv.vertices(:,3)); %maximalni z je ulne vepredu u tohoto pohledu
-        end
+        [ix,iy,iz] = mnixyz(plotInfo,v,ch,xi,yi,zi,fv,0); %lokalni funkce na souradnice
         handles_s(ch) = scatter3(ix,iy,iz, circle_size, 'MarkerFaceColor',clr, 'MarkerEdgeColor','none');
+    end
+    barvy = {[1 1 0],[1 1 .33],[1 1 .66],[1 1 1]}; %barvy ktere budu stridat u jmen kanalu 
+    for ch = 1:size(plotInfo.chnls,2) %jmena kanalu kresilm az potom, aby byla navrchu
+        if isfield(plotInfo,'chnames') && (vals(ch)>= mean(clims) || numel(vals<=30) ) %kreslim jen vyrazne kanaly nebo vsechny pokudu jich je malo
+            [ix,iy,iz] = mnixyz(plotInfo,v,ch,xi,yi,zi,fv,5); %lokalni funkce na souradnice
+            if rem(ch,2)==1 %pokud liche cislo %strfind(plotInfo.chnames{ch},'1-') %pokud je jednicka ve jmene kanalu
+                handles_s(ch,2) = text(ix+2,iy+2,iz+2,strrep(plotInfo.chnames{ch},'_','\_'),'FontSize',8,'Color', barvy{rem(ch,4)+1}); %vypisu jmeno kanalu, malym pismem
+            else
+                handles_s(ch,2) = text(ix-2,iy-2,iz-2,strrep(plotInfo.chnames{ch},'_','\_'),'FontSize',8,'Color', barvy{rem(ch,4)+1}); %vypisu jmeno kanalu, malym pismem
+            end
+        end
     end
     % save snapshot
     if isfield(plotInfo, 'savepng') && plotInfo.savepng==true
         set(f, 'InvertHardcopy','off');                 % preserves black background
-        thisFigName = [figname '_view' num2str(v)];
+        thisFigName = [figname '_' plotInfo.slicePlanes{v}]; %kamil - vypisu jmeno pohledu spis nez jeho cislo
         if plotInfo.printResolution == 0
             print(f, '-dpng','-r0', [outDir filesep thisFigName '.png']);
         else
-            print(f, '-dpng','-r600', [outDir filesep thisFigName '.png']);
+            print(f, '-dpng',['-r' num2str(plotInfo.printResolution)], [outDir filesep thisFigName '.png']);
         end
         display(['Figure: ' thisFigName '.png stored in: ' outDir]);
     end
     for ch = 1:size(plotInfo.chnls,2)
-        delete(handles_s(ch)); %scatter zase smazu, a nakreslim ho z jineho pohledu
+        delete(handles_s(ch,1)); %scatter zase smazu, a nakreslim ho z jineho pohledu
+        if handles_s(ch,2) ~= 0
+          delete(handles_s(ch,2)); %pokud existuje smazu i text
+        end
     end
 end
 
@@ -197,12 +204,24 @@ if isfield(plotInfo, 'savepng') && plotInfo.savepng==true && size(model_views,1)
     if plotInfo.printResolution == 0
         print(f, '-dpng','-r0', [outDir filesep figname '.png']);
     else
-        print(f, '-dpng','-r600', [outDir filesep figname '.png']);
+        print(f, '-dpng',['-r' num2str(plotInfo.printResolution)], [outDir filesep figname '.png']);
     end
     display(['Figure: ' figname '.png stored in: ' outDir]);
 end
 if isfield(plotInfo, 'savepng') && plotInfo.savepng==true || isfield(plotInfo, 'savefig') && plotInfo.savefig==true
     close(f);    %close figure if it was saved 
 end
-
+end
+function [ix,iy,iz] = mnixyz(plotInfo,v,ch,xi,yi,zi,fv,top)
+        %kopie z kodu nahore, abych mohl dat nazvy kanalu do popredi pred body
+        %kvuli tomu i parametr top, ktery zajisti hloubkovou souradnici v popredi 
+        [ix,iy,iz] = mni2vox(plotInfo.chnls(ch).MNI_x, plotInfo.chnls(ch).MNI_y, plotInfo.chnls(ch).MNI_z, xi, yi, zi); % index of MNI coor
+        if strncmp(plotInfo.slicePlanes{v},'coronal',1) %
+            iy = min(fv.vertices(:,1))-top; %minimalni y je uplne vepredu u tohoto pohledu
+        elseif strncmp(plotInfo.slicePlanes{v},'sagittal',1) %
+            ix = max(fv.vertices(:,2))+top; %maximalni x je uplne vepredu u tohoto pohledu
+        elseif strncmp(plotInfo.slicePlanes{v},'axial',1) %
+            iz = max(fv.vertices(:,3))+top; %maximalni z je ulne vepredu u tohoto pohledu
+        end
+end
 
