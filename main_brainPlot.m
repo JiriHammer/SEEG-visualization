@@ -35,6 +35,10 @@ end
 if ~exist('figureVisible','var')
     figureVisible = 'on';
 end
+
+if ~exist('FontSize','var')
+    FontSize = 8; %defaulnti puvodni velikost popisek kanalu
+end
 %% ######################## USER INTERFACE ##################################
 % --- interface structure 'plotInfo'
 plotInfo = struct(...           % user interface structure: holds most (but not all!) of the user settings
@@ -57,7 +61,8 @@ plotInfo = struct(...           % user interface structure: holds most (but not 
     'circle_size',56,    ....   %size of the circles in 3D plot - 28
     'outputType','3D BRAIN MODEL', ... % ktere obrazky se maji generovat SUBJECT-SPECIFIC SLICES | COLIN27 BRAIN SLICES | 3D BRAIN MODEL
     'niiFileSubject', niiFile, ... 
-    'figureVisible',figureVisible ...
+    'figureVisible',figureVisible, ...
+    'FontSize',FontSize ...
 );
 
 % --- load channels MNI coors (variable 'data_channels' in 'channelsInfo.mat')

@@ -9,7 +9,11 @@ function inds = cVals2cInds(vals, clims, mapInds)
 assert(clims(1) <= clims(2));
 assert(mapInds(1) <= mapInds(2));
 
+if clims(1) == clims(2) && numel(vals)==1 && vals(1) == clims(1)
+    inds = 1; %kamil 7.2.2018 - pro pripad, kdy maji vsechny kanaly stejnou hodnoty , napr 0
+else
 %% truncate values 'vals' to range of 'clims' 
+
 tmp = vals(:);
 tmp(tmp<clims(1)) = clims(1);
 tmp(tmp>clims(2)) = clims(2);
@@ -17,3 +21,5 @@ tmp = reshape(tmp, size(vals));
 
 %% lin. translates this result to mapInds
 inds = round(linTransform(tmp, clims, mapInds));
+
+end

@@ -142,10 +142,13 @@ for v = 1:size(model_views,1)
     for ch = 1:size(plotInfo.chnls,2) %jmena kanalu kresilm az potom, aby byla navrchu
         if isfield(plotInfo,'chnames') && (vals(ch)>= mean(clims) || numel(vals<=30) ) %kreslim jen vyrazne kanaly nebo vsechny pokudu jich je malo
             [ix,iy,iz] = mnixyz(plotInfo,v,ch,xi,yi,zi,fv,5); %lokalni funkce na souradnice
+            move = rand/2+.5; % mezi 0.5 a 1.0 - aby se napisy neprekryvaly
             if rem(ch,2)==1 %pokud liche cislo %strfind(plotInfo.chnames{ch},'1-') %pokud je jednicka ve jmene kanalu
-                handles_s(ch,2) = text(ix+2,iy+2,iz+2,strrep(plotInfo.chnames{ch},'_','\_'),'FontSize',8,'Color', barvy{rem(ch,4)+1}); %vypisu jmeno kanalu, malym pismem
+                %vpravo nad kanalem
+                handles_s(ch,2) = text(ix+move,iy+move,iz+move,strrep(plotInfo.chnames{ch},'_','\_'),'FontSize',plotInfo.FontSize,'Color', barvy{rem(ch,4)+1}); %vypisu jmeno kanalu, malym pismem
             else
-                handles_s(ch,2) = text(ix-2,iy-2,iz-2,strrep(plotInfo.chnames{ch},'_','\_'),'FontSize',8,'Color', barvy{rem(ch,4)+1}); %vypisu jmeno kanalu, malym pismem
+                %vlevo pod kanalem
+                handles_s(ch,2) = text(ix-move,iy-move,iz-move,strrep(plotInfo.chnames{ch},'_','\_'),'FontSize',plotInfo.FontSize,'Color', barvy{rem(ch,4)+1}); %vypisu jmeno kanalu, malym pismem
             end
         end
     end
