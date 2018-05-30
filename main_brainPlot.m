@@ -1,4 +1,7 @@
-%% master script for plotting SEEG values in slices and in 3D model
+function [brainsurface] = main_brainPlot(vals_channels, mni_channels,names_channels,brainsurface, plotSetup)
+%main_brainPlot master script for plotting SEEG values in slices and in 3D model
+% function version by Kamil Vlcek 30.5.2018
+%
 % this script is meant as a tutorial showing a with 3 simple examples
 % install: 
 %   - add this script to matlab paths (use: Set Paths)
@@ -13,7 +16,7 @@
 %   (C) loads subject-specific brain data and plots them in slices
 
 % (c) Jiri Hammer, Jan 2017, bug reports: jirihammer@gmail.com
-
+% parametry: vals_channels, mni_channels, names_channels, figureNamePrefix, figureVisible, FontSize, myColorMap,outputDir
 %% set path to this script
 dir_toolbox = what('SEEG-visualization');     % folder 'visualization_SEEG' MUST be in pathdef.m
 if isempty(dir_toolbox) 
@@ -23,35 +26,36 @@ end
 %dir_curr = pwd;
 %cd(dir_toolbox.path);
 
-assert(exist('outputDir','var')>0,'nedefinovan vystupni adresar');
+%assert(exist('outputDir','var')>0,'nedefinovan vystupni adresar');
 %outputDir ='d:\eeg\motol\pacienti\p073 Pech VT6\figures\';
 
 niiFile = 'koregistrace_JH\wT1.nii'; %pouziva se jen pri  'SUBJECT-SPECIFIC SLICES'
 
-if ~exist('figureNamePrefix','var')
-    figureNamePrefix = 'myTest_';
+assert(isfield(plotSetup,'outputDir'), 'outputDir musi byt definovan');
+if ~isfield(plotSetup,'figureNamePrefix')
+    plotSetup.figureNamePrefix = 'myTest_';
 end
 
-if ~exist('figureVisible','var')
-    figureVisible = 'on';
+if ~isfield(plotSetup,'figureVisible')
+    plotSetup.figureVisible = 'on';
 end
 
-if ~exist('FontSize','var')
-    FontSize = 8; %defaulnti puvodni velikost popisek kanalu
+if ~isfield(plotSetup,'FontSize')
+    plotSetup.FontSize = 8; %defaulnti puvodni velikost popisek kanalu
 end
 
-if ~exist('myColorMap','var')
-    myColorMap = jet(128); %defaultni color scale
+if ~isfield(plotSetup,'myColorMap')
+    plotSetup.myColorMap = jet(128); %defaultni color scale
 end
 %% ######################## USER INTERFACE ##################################
 % --- interface structure 'plotInfo'
 plotInfo = struct(...           % user interface structure: holds most (but not all!) of the user settings
-    'outputDir',outputDir, ...   % output directory, where the plots are saved
-    'figureNamePrefix', figureNamePrefix, ...                  % figure name prefix. Program adds automatic suffix to each figure.
+    'outputDir', plotSetup.outputDir, ...   % output directory, where the plots are saved
+    'figureNamePrefix',  plotSetup.figureNamePrefix, ...                  % figure name prefix. Program adds automatic suffix to each figure.
     'figurePosition', [1281 -89 1920 964], ...           % position of a figure on screen. For whole screen, evoke a figure, maximize it and type: get(gcf, 'Position')
     'printResolution', 300, ...                           % choices: 0 (= screen resolution) or >0  (= dpi). Resolution of the figures.                          
     'colorScale', [], ... %[0 0.7], ...                               % for example, [-10 10]. If empty, programs adjusts colorscale to 5 & 95 percentile of the data.
-    'colorMap', myColorMap, ...                           % colormap for channel values
+    'colorMap',  plotSetup.myColorMap, ...                           % colormap for channel values
     'MRI_fileDir', dir_toolbox.path, ...                % full path to brain MRI NIFTI (.nii) file. Must be normalized to MNI space!
     'size_interpolate', 1.0, ...                        % in [mm], voxel size to which the brain is interpolated; 1.0 means no interpolation
     'size_coloredCube', 3.0, ...                        % in [mm], "voxel" size of the colored channel values
@@ -65,8 +69,8 @@ plotInfo = struct(...           % user interface structure: holds most (but not 
     'circle_size',56,    ....   %size of the circles in 3D plot - 28
     'outputType','3D BRAIN MODEL', ... % ktere obrazky se maji generovat SUBJECT-SPECIFIC SLICES | COLIN27 BRAIN SLICES | 3D BRAIN MODEL
     'niiFileSubject', niiFile, ... 
-    'figureVisible',figureVisible, ...
-    'FontSize',FontSize ...
+    'figureVisible', plotSetup.figureVisible, ...
+    'FontSize', plotSetup.FontSize ...
 );
 
 % --- load channels MNI coors (variable 'data_channels' in 'channelsInfo.mat')
@@ -74,7 +78,7 @@ plotInfo = struct(...           % user interface structure: holds most (but not 
 assert(exist('mni_channels','var') == 1,'MNI coordinates var mni_channels is missing'); %ziskam z headeru pomoci CHHeader.GetMNI
 plotInfo.chnls = mni_channels;             % !!! set here your MNI coordinates as a structure array with the same fields as in this example!
 
-if exist('names_channels','var') && ~isempty(names_channels);
+if exist('names_channels','var') && ~isempty(names_channels)
    plotInfo.chnames = names_channels;  % jmena kanalu, pokud existuji
 end
 
@@ -123,7 +127,7 @@ end
 plotInfo.plottingStyle = '3D_model';
 plotInfo.size_interpolate = 1;          % consider larger voxels for faster & easier manipulation
 plotInfo.MRI_file = [plotInfo.MRI_fileDir filesep  'wc1T1_colin27.nii'];       % gray matter (segmented from colin27 by SPM12)
-[plotInfo.brain plotInfo.fv] = getBrainData(plotInfo); %loads 3D brain MRI or CT = brain
+[plotInfo.brain, plotInfo.fv] = getBrainData(plotInfo); %loads 3D brain MRI or CT = brain
 brainsurface = plotInfo.fv; %save for later use
 
 % colin27-specific: plot brain: 3D model 

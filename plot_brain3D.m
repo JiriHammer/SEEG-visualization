@@ -135,13 +135,13 @@ for v = 1:size(model_views,1)
     for ch = 1:size(plotInfo.chnls,2)
         i_clr = cVals2cInds(vals(ch), [clims(1),clims(2)], size(clrmap.brain,1)+[1,size(clrmap.chnls,1)]);
         clr = clrmap.fig(i_clr,:);
-        [ix,iy,iz] = mnixyz(plotInfo,v,ch,xi,yi,zi,fv,0); %lokalni funkce na souradnice
-        handles_s(ch) = scatter3(ix,iy,iz, circle_size, 'MarkerFaceColor',clr, 'MarkerEdgeColor','none');
+        [ix,iy,iz] = mnixyz(plotInfo,v,ch,xi,yi,zi,fv,vals(ch),0); %lokalni funkce na souradnice
+        handles_s(ch,1) = scatter3(ix,iy,iz, circle_size, 'MarkerFaceColor',clr, 'MarkerEdgeColor','none');
     end
     barvy = {[1 1 0],[1 1 .33],[1 1 .66],[1 1 1]}; %barvy ktere budu stridat u jmen kanalu 
     for ch = 1:size(plotInfo.chnls,2) %jmena kanalu kresilm az potom, aby byla navrchu
         if isfield(plotInfo,'chnames') && (vals(ch)>= mean(clims) || numel(vals<=30) ) %kreslim jen vyrazne kanaly nebo vsechny pokudu jich je malo
-            [ix,iy,iz] = mnixyz(plotInfo,v,ch,xi,yi,zi,fv,5); %lokalni funkce na souradnice
+            [ix,iy,iz] = mnixyz(plotInfo,v,ch,xi,yi,zi,fv,vals(ch),5); %lokalni funkce na souradnice
             move = rand/2+.5; % mezi 0.5 a 1.0 - aby se napisy neprekryvaly
             if rem(ch,2)==1 %pokud liche cislo %strfind(plotInfo.chnames{ch},'1-') %pokud je jednicka ve jmene kanalu
                 %vpravo nad kanalem
@@ -188,7 +188,7 @@ if plotInfo.doAnimation_gif
         %frame = getframe(f, get(f, 'Position'));
         im = frame2im(frame);
         [imind,cm] = rgb2ind(im,256);
-        if n == 1;
+        if n == 1
             imwrite(imind,cm,filename,'gif', 'Loopcount',inf);
         else
             imwrite(imind,cm,filename,'gif','WriteMode','append');
@@ -215,16 +215,18 @@ if isfield(plotInfo, 'savepng') && plotInfo.savepng==true || isfield(plotInfo, '
     close(f);    %close figure if it was saved 
 end
 end
-function [ix,iy,iz] = mnixyz(plotInfo,v,ch,xi,yi,zi,fv,top)
+function [ix,iy,iz] = mnixyz(plotInfo,iview,ch,xVector,yVector,zVector,fv,valch,top)
         %kopie z kodu nahore, abych mohl dat nazvy kanalu do popredi pred body
-        %kvuli tomu i parametr top, ktery zajisti hloubkovou souradnici v popredi 
-        [ix,iy,iz] = mni2vox(plotInfo.chnls(ch).MNI_x, plotInfo.chnls(ch).MNI_y, plotInfo.chnls(ch).MNI_z, xi, yi, zi); % index of MNI coor
-        if strncmp(plotInfo.slicePlanes{v},'coronal',1) %
-            iy = min(fv.vertices(:,1))-top; %minimalni y je uplne vepredu u tohoto pohledu
-        elseif strncmp(plotInfo.slicePlanes{v},'sagittal',1) %
-            ix = max(fv.vertices(:,2))+top; %maximalni x je uplne vepredu u tohoto pohledu
-        elseif strncmp(plotInfo.slicePlanes{v},'axial',1) %
-            iz = max(fv.vertices(:,3))+top; %maximalni z je ulne vepredu u tohoto pohledu
+        %kvuli tomu i parametr top, ktery zajisti text pred bodem - 0 pro bod a 5 pro text 
+        %fv je isosurface, iview je index v slicePlanes = ktery pohled se vykresluje
+        %valch je hodnota eeg tohoto kanalu
+        [ix,iy,iz] = mni2vox(plotInfo.chnls(ch).MNI_x, plotInfo.chnls(ch).MNI_y, plotInfo.chnls(ch).MNI_z, xVector, yVector, zVector); % index of MNI coor
+        if strncmp(plotInfo.slicePlanes{iview},'coronal',1) %
+            iy = min(fv.vertices(:,1))-top-abs(valch); %minimalni y je uplne vepredu u tohoto pohledu
+        elseif strncmp(plotInfo.slicePlanes{iview},'sagittal',1) %
+            ix = max(fv.vertices(:,2))+top+abs(valch); %maximalni x je uplne vepredu u tohoto pohledu
+        elseif strncmp(plotInfo.slicePlanes{iview},'axial',1) %
+            iz = max(fv.vertices(:,3))+top+abs(valch); %maximalni z je ulne vepredu u tohoto pohledu
         end
 end
 
