@@ -47,6 +47,11 @@ end
 if ~isfield(plotSetup,'myColorMap')
     plotSetup.myColorMap = jet(128); %defaultni color scale
 end
+
+if ~isfield(plotSetup,'circle_size')
+    plotSetup.circle_size = 56; %defaultni velikost kulicky v mozku
+end
+
 %% ######################## USER INTERFACE ##################################
 % --- interface structure 'plotInfo'
 plotInfo = struct(...           % user interface structure: holds most (but not all!) of the user settings
@@ -66,7 +71,7 @@ plotInfo = struct(...           % user interface structure: holds most (but not 
     'doAnimation_gif', false, ...                         % GIF animation of 3D brain model (takes longer time)
     'savefig',false,...                 %if save FIG figures 
     'savepng',true, ...               %if sace png figures
-    'circle_size',56,    ....   %size of the circles in 3D plot - 28
+    'circle_size',plotSetup.circle_size,    ....   %size of the circles in 3D plot - 28
     'outputType','3D BRAIN MODEL', ... % ktere obrazky se maji generovat SUBJECT-SPECIFIC SLICES | COLIN27 BRAIN SLICES | 3D BRAIN MODEL
     'niiFileSubject', niiFile, ... 
     'figureVisible', plotSetup.figureVisible, ...
