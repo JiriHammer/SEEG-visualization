@@ -6,13 +6,40 @@ function plot_brain3D(vals, plotInfo)
 %% select or set here color maps
 clrmap.brain = gray(128);                           % colormap for brain (T1, T2, CT, ...)
 
-if isfield(plotInfo, 'colorMap')
+%% channel color limits
+if ~isfield(plotInfo, 'chnl_clims')
+    clims = [min(vals(:)),max(vals(:))];
+else
+    clims = plotInfo.chnl_clims;
+end
+%%
+
+if plotInfo.customColor
+    % pridal 29.6.2018 Kamil
+    % custom colormap, pod nulou modra farba, nad nulou cervena
+    total = abs(clims(1)-clims(2));
+    neg = abs(clims(1));
+
+    blue = ceil((neg/total)*128);
+    red = 128 - blue;
+    lightblue = ceil(blue/2);
+    yellow = ceil(red/2);
+
+    b = [linspace(0.3,1,blue)'; zeros(red,1)];
+    g = [zeros(lightblue,1); linspace(0,1,blue-lightblue)'; linspace(1,0,yellow)'; zeros(red-yellow,1)];
+    r = [zeros(blue,1) ; linspace(1,0.3,red)'];
+
+    clrmap.chnls = [r g b];
+
+elseif isfield(plotInfo, 'colorMap')
     clrmap.chnls = plotInfo.colorMap;
 else
     clrmap.chnls = jet(128);                            % default colormap for values: jet
     % clrmap.chnls = getColorMap('bwr', 128);             % colormap for values: blue - white - red
     % clrmap.chnls = getColorMap('bcwwmr', 128);          % colormap for values: blue - cyan - white - magenta - red
 end
+
+
 clrmap.fig = cat(1, clrmap.brain, clrmap.chnls);    % colormap of the figure
 alphaVal = 0.2;                                     % transparency of the brain structure (1 = opaque)
 
@@ -46,12 +73,6 @@ set(f, 'InvertHardcopy','off');                 % preserves black background
 set(f, 'PaperPositionMode','auto');
 opengl('hardware');
 
-%% channel color limits
-if ~isfield(plotInfo, 'chnl_clims')
-    clims = [min(vals(:)),max(vals(:))];
-else
-    clims = plotInfo.chnl_clims;
-end
 
 %% colorbar
 clrbar_axes = axes('visible','on', 'position',[0.96 0.2 0.01 0.6]);  % position
@@ -97,6 +118,7 @@ set(gca, 'XTick',[], 'YTick',[], 'ZTick',[]);
 
 
 %% output directory
+plotInfo.outDir = ['C:\Users\nadabednar\Documents\FGÚ\code\iEEG_scripts' filesep 'slices_subjectBrain'];
 if isfield(plotInfo, 'savepng') && plotInfo.savepng==true || isfield(plotInfo, 'savefig') && plotInfo.savefig==true || plotInfo.doAnimation_gif
     %only create dir if needed
     assert(isfield(plotInfo, 'outDir'),'output dir not defined');

@@ -135,6 +135,8 @@ plotInfo.MRI_file = [plotInfo.MRI_fileDir filesep  'wc1T1_colin27.nii'];       %
 [plotInfo.brain, plotInfo.fv] = getBrainData(plotInfo); %loads 3D brain MRI or CT = brain
 brainsurface = plotInfo.fv; %save for later use
 
+plotInfo.customColor = plotSetup.customColor;
+
 % colin27-specific: plot brain: 3D model 
 plotInfo.outDir = [plotInfo.outputDir filesep '3D_model'];
 for t = 1:size(vals_channels,2)          % go thru all time points
