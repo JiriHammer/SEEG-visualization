@@ -118,7 +118,6 @@ set(gca, 'XTick',[], 'YTick',[], 'ZTick',[]);
 
 
 %% output directory
-plotInfo.outDir = ['C:\Users\nadabednar\Documents\FGÚ\code\iEEG_scripts' filesep 'slices_subjectBrain'];
 if isfield(plotInfo, 'savepng') && plotInfo.savepng==true || isfield(plotInfo, 'savefig') && plotInfo.savefig==true || plotInfo.doAnimation_gif
     %only create dir if needed
     assert(isfield(plotInfo, 'outDir'),'output dir not defined');
