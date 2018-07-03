@@ -75,7 +75,8 @@ plotInfo = struct(...           % user interface structure: holds most (but not 
     'outputType','3D BRAIN MODEL', ... % ktere obrazky se maji generovat SUBJECT-SPECIFIC SLICES | COLIN27 BRAIN SLICES | 3D BRAIN MODEL
     'niiFileSubject', niiFile, ... 
     'figureVisible', plotSetup.figureVisible, ...
-    'FontSize', plotSetup.FontSize ...
+    'FontSize', plotSetup.FontSize, ...
+    'customColors', plotSetup.customColors ...
 );
 
 % --- load channels MNI coors (variable 'data_channels' in 'channelsInfo.mat')
@@ -135,7 +136,7 @@ plotInfo.MRI_file = [plotInfo.MRI_fileDir filesep  'wc1T1_colin27.nii'];       %
 [plotInfo.brain, plotInfo.fv] = getBrainData(plotInfo); %loads 3D brain MRI or CT = brain
 brainsurface = plotInfo.fv; %save for later use
 
-plotInfo.customColor = plotSetup.customColor;
+
 
 % colin27-specific: plot brain: 3D model 
 plotInfo.outDir = [plotInfo.outputDir filesep '3D_model'];

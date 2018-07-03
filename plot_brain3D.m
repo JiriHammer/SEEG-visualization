@@ -14,22 +14,27 @@ else
 end
 %%
 
-if plotInfo.customColor
-    % pridal 29.6.2018 Kamil
+if plotInfo.customColors.customColor
+    % pridala 29.6.2018 Nada
     % custom colormap, pod nulou modra farba, nad nulou cervena
-    total = abs(clims(1)-clims(2));
-    neg = abs(clims(1));
+        nadaColor = plotInfo.customColors;  
+        all = 128;
+        total = abs(clims(1)-clims(2));
+        neg = abs(clims(1)); 
+        zero = ceil((neg/total)*all);
+        if nadaColor.flip
+            zero = 128-zero;
+        end
+        r = [linspace(nadaColor.darkneg(1), nadaColor.lightneg(1), zero)'; linspace(nadaColor.lightpos(1), nadaColor.darkpos(1), all-zero)'];
+        g = [linspace(nadaColor.darkneg(2), nadaColor.lightneg(2), zero)'; linspace(nadaColor.lightpos(2), nadaColor.darkpos(2), all-zero)'];
+        b = [linspace(nadaColor.darkneg(3), nadaColor.lightneg(3), zero)'; linspace(nadaColor.lightpos(3), nadaColor.darkpos(3), all-zero)'];
 
-    blue = ceil((neg/total)*128);
-    red = 128 - blue;
-    lightblue = ceil(blue/2);
-    yellow = ceil(red/2);
+        colorMap = [r g b]/255;
+        if nadaColor.flip
+            colorMap = flipud(colorMap);
+        end
 
-    b = [linspace(0.3,1,blue)'; zeros(red,1)];
-    g = [zeros(lightblue,1); linspace(0,1,blue-lightblue)'; linspace(1,0,yellow)'; zeros(red-yellow,1)];
-    r = [zeros(blue,1) ; linspace(1,0.3,red)'];
-
-    clrmap.chnls = [r g b];
+        clrmap.chnls = colorMap;
 
 elseif isfield(plotInfo, 'colorMap')
     clrmap.chnls = plotInfo.colorMap;
