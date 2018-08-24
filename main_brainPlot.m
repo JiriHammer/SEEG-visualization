@@ -97,7 +97,7 @@ assert(exist('vals_channels','var')==1,'channel values var vals_channels is miss
 if isempty(plotInfo.colorScale)
     clims = [prctile(vals_channels(:),5), prctile(vals_channels(:),95)]; 
     %clims = max(abs(clims)); 
-    if clims(1) == clims(2), clims = sort ( [0 max(vals_channels)] );  end %pokud je napriklad jen jedna hodnota    
+    if clims(1) >= clims(2), clims = sort ( [0 max(vals_channels)] );  end %pokud je napriklad jen jedna nebo dve hodnota    
     plotInfo.chnl_clims = clims;
 else
     plotInfo.chnl_clims = plotInfo.colorScale;
