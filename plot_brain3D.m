@@ -20,7 +20,7 @@ if plotInfo.customColors.customColor
         nadaColor = plotInfo.customColors;  
         all = 128;
         total = abs(clims(1)-clims(2));
-        neg = abs(clims(1)); 
+        neg = abs(min(clims(1),0)); %min pri pripad, ze nejmensi hodnota neni mensi nez 0
         zero = ceil((neg/total)*all);
         if nadaColor.flip
             zero = 128-zero;
