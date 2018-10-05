@@ -167,6 +167,6 @@ end
 
 %% change back to previous directory
 end
-disp('hotovo');
+%disp('hotovo');
 %display('Done. Thanks for trying this tutorial out!  :o) ');
 %cd(dir_curr);
