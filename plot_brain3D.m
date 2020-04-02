@@ -24,15 +24,26 @@ if plotInfo.customColors.customColor
         pos = abs(max(clims(2),0)); %largest negative value. min pri pripad, ze nejmensi hodnota neni mensi nez 0
         total = pos + neg; %maximal difference between positive adn negative values
         if total > 0
-            zero = floor((neg/total)*all); %index of zero value in the colormap 128, the number of colors is proportinal to the size of the interval neg-0, 0-pos
+            if clims(1) <= 0 && clims(2) >= 0 %zero included in the limits
+                zero = floor((neg/total)*all); %index of zero value in the colormap 128, the number of colors is proportinal to the size of the interval neg-0, 0-pos                
+                zeroclrrep = 1;
+            else
+                zero = ceil((neg/total)*all); %index of zero value in the colormap 128, the number of colors is proportinal to the size of the interval neg-0, 0-pos
+                zeroclrrep = 0; %only negative or only positive values
+            end    
             if nadaColor.flip
                 zero = 128-zero;
             end
+            
             r = [linspace(nadaColor.darkneg(1), nadaColor.lightneg(1), zero)'; ... %color from most negative (dark) to 0 (light)
-                nadaColor.zeroclr(1); ... %zero value color
-                linspace(nadaColor.lightpos(1), nadaColor.darkpos(1), all-zero-1)']; %colors from light to dark positive
-            g = [linspace(nadaColor.darkneg(2), nadaColor.lightneg(2), zero)'; nadaColor.zeroclr(2); linspace(nadaColor.lightpos(2), nadaColor.darkpos(2), all-zero-1)'];
-            b = [linspace(nadaColor.darkneg(3), nadaColor.lightneg(3), zero)'; nadaColor.zeroclr(3); linspace(nadaColor.lightpos(3), nadaColor.darkpos(3), all-zero-1)'];
+                repmat(nadaColor.zeroclr(1),zeroclrrep,1); ... %zero value color
+                linspace(nadaColor.lightpos(1), nadaColor.darkpos(1), all-zero-zeroclrrep)']; %colors from light to dark positive
+            g = [linspace(nadaColor.darkneg(2), nadaColor.lightneg(2), zero)'; ... 
+                repmat(nadaColor.zeroclr(2),zeroclrrep,1); ... 
+                linspace(nadaColor.lightpos(2), nadaColor.darkpos(2), all-zero-zeroclrrep)'];
+            b = [linspace(nadaColor.darkneg(3), nadaColor.lightneg(3), zero)'; ...
+                repmat(nadaColor.zeroclr(3),zeroclrrep,1); ...
+                linspace(nadaColor.lightpos(3), nadaColor.darkpos(3), all-zero-zeroclrrep)'];
             rgbclr = [r g b];
         elseif neg>0 %if only one negative value
             rgbclr = repmat(nadaColor.darkneg,all,1);
