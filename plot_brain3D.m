@@ -18,18 +18,30 @@ if plotInfo.customColors.customColor
     % pridala 29.6.2018 Nada
     % custom colormap, pod nulou modra farba, nad nulou cervena
         nadaColor = plotInfo.customColors;  
-        all = 128;
-        total = abs(clims(1)-clims(2));
-        neg = abs(min(clims(1),0)); %min pri pripad, ze nejmensi hodnota neni mensi nez 0
-        zero = ceil((neg/total)*all);
-        if nadaColor.flip
-            zero = 128-zero;
+        all = 128; %total number of colors in the colormap
+       
+        neg = abs(min(clims(1),0)); %largest negative value. min pri pripad, ze nejmensi hodnota neni mensi nez 0
+        pos = abs(max(clims(2),0)); %largest negative value. min pri pripad, ze nejmensi hodnota neni mensi nez 0
+        total = pos + neg; %maximal difference between positive adn negative values
+        if total > 0
+            zero = floor((neg/total)*all); %index of zero value in the colormap 128, the number of colors is proportinal to the size of the interval neg-0, 0-pos
+            if nadaColor.flip
+                zero = 128-zero;
+            end
+            r = [linspace(nadaColor.darkneg(1), nadaColor.lightneg(1), zero)'; ... %color from most negative (dark) to 0 (light)
+                nadaColor.zeroclr(1); ... %zero value color
+                linspace(nadaColor.lightpos(1), nadaColor.darkpos(1), all-zero-1)']; %colors from light to dark positive
+            g = [linspace(nadaColor.darkneg(2), nadaColor.lightneg(2), zero)'; nadaColor.zeroclr(2); linspace(nadaColor.lightpos(2), nadaColor.darkpos(2), all-zero-1)'];
+            b = [linspace(nadaColor.darkneg(3), nadaColor.lightneg(3), zero)'; nadaColor.zeroclr(3); linspace(nadaColor.lightpos(3), nadaColor.darkpos(3), all-zero-1)'];
+            rgbclr = [r g b];
+        elseif neg>0 %if only one negative value
+            rgbclr = repmat(nadaColor.darkneg,all,1);
+        elseif pos>0
+            rgbclr = repmat(nadaColor.darkpos,all,1);
+        else %if only zero values
+            rgbclr = repmat(nadaColor.zeroclr,all,1);
         end
-        r = [linspace(nadaColor.darkneg(1), nadaColor.lightneg(1), zero)'; linspace(nadaColor.lightpos(1), nadaColor.darkpos(1), all-zero)'];
-        g = [linspace(nadaColor.darkneg(2), nadaColor.lightneg(2), zero)'; linspace(nadaColor.lightpos(2), nadaColor.darkpos(2), all-zero)'];
-        b = [linspace(nadaColor.darkneg(3), nadaColor.lightneg(3), zero)'; linspace(nadaColor.lightpos(3), nadaColor.darkpos(3), all-zero)'];
-
-        colorMap = [r g b]/255;
+        colorMap = rgbclr/255;
         if nadaColor.flip
             colorMap = flipud(colorMap);
         end

@@ -82,6 +82,9 @@ plotInfo = struct(...           % user interface structure: holds most (but not 
 % --- load channels MNI coors (variable 'data_channels' in 'channelsInfo.mat')
 %load('channelsInfo.mat', 'data_channels');
 assert(exist('mni_channels','var') == 1,'MNI coordinates var mni_channels is missing'); %ziskam z headeru pomoci CHHeader.GetMNI
+if size(mni_channels,1)>size(mni_channels,2)
+    mni_channels = mni_channels'; 
+end %the MNI should be in rows
 plotInfo.chnls = mni_channels;             % !!! set here your MNI coordinates as a structure array with the same fields as in this example!
 
 if exist('names_channels','var') && ~isempty(names_channels)
