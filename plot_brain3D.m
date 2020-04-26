@@ -15,11 +15,11 @@ end
 %%
 
 if plotInfo.customColors.customColor
-    % pridala 29.6.2018 Nada
+    % pridala 29.6.2018 Nada, upravy 04-2020 Kamil
     % custom colormap, pod nulou modra farba, nad nulou cervena
         nadaColor = plotInfo.customColors;  
         all = 128; %total number of colors in the colormap
-       
+        if nadaColor.SuperMax, all = 127; end
         neg = abs(min(clims(1),0)); %largest negative value. min pri pripad, ze nejmensi hodnota neni mensi nez 0
         pos = abs(max(clims(2),0)); %largest negative value. min pri pripad, ze nejmensi hodnota neni mensi nez 0
         total = pos + neg; %maximal difference between positive adn negative values
@@ -51,6 +51,9 @@ if plotInfo.customColors.customColor
             rgbclr = repmat(nadaColor.darkpos,all,1);
         else %if only zero values
             rgbclr = repmat(nadaColor.zeroclr,all,1);
+        end
+        if nadaColor.SuperMax
+            rgbclr(end+1,:) = nadaColor.supermaxcolor; %add the supermax color to the end
         end
         colorMap = rgbclr/255;
         if nadaColor.flip

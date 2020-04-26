@@ -59,7 +59,7 @@ plotInfo = struct(...           % user interface structure: holds most (but not 
     'figureNamePrefix',  plotSetup.figureNamePrefix, ...                  % figure name prefix. Program adds automatic suffix to each figure.
     'figurePosition', [1281 -89 1920 964], ...           % position of a figure on screen. For whole screen, evoke a figure, maximize it and type: get(gcf, 'Position')
     'printResolution', 300, ...                           % choices: 0 (= screen resolution) or >0  (= dpi). Resolution of the figures.                          
-    'colorScale', [], ... %[0 0.7], ...                               % for example, [-10 10]. If empty, programs adjusts colorscale to 5 & 95 percentile of the data.
+    'colorScale', plotSetup.colorScale, ... %[0 0.7], ...                               % for example, [-10 10]. If empty, programs adjusts colorscale to 5 & 95 percentile of the data.
     'colorMap',  plotSetup.myColorMap, ...                           % colormap for channel values
     'MRI_fileDir', dir_toolbox.path, ...                % full path to brain MRI NIFTI (.nii) file. Must be normalized to MNI space!
     'size_interpolate', 1.0, ...                        % in [mm], voxel size to which the brain is interpolated; 1.0 means no interpolation
