@@ -35,15 +35,15 @@ if plotInfo.customColors.customColor
                 zero = 128-zero;
             end
             
-            r = [linspace(nadaColor.darkneg(1), nadaColor.lightneg(1), zero)'; ... %color from most negative (dark) to 0 (light)
+            r = [linspace(nadaColor.darkneg(1), nadaColor.lightneg(1), zero-1)'; ... %color from most negative (dark) to 0 (light)
                 repmat(nadaColor.zeroclr(1),zeroclrrep,1); ... %zero value color
-                linspace(nadaColor.lightpos(1), nadaColor.darkpos(1), all-zero-zeroclrrep)']; %colors from light to dark positive
-            g = [linspace(nadaColor.darkneg(2), nadaColor.lightneg(2), zero)'; ... 
+                linspace(nadaColor.lightpos(1), nadaColor.darkpos(1), all-zero-zeroclrrep+1)']; %colors from light to dark positive
+            g = [linspace(nadaColor.darkneg(2), nadaColor.lightneg(2), zero-1)'; ... 
                 repmat(nadaColor.zeroclr(2),zeroclrrep,1); ... 
-                linspace(nadaColor.lightpos(2), nadaColor.darkpos(2), all-zero-zeroclrrep)'];
-            b = [linspace(nadaColor.darkneg(3), nadaColor.lightneg(3), zero)'; ...
+                linspace(nadaColor.lightpos(2), nadaColor.darkpos(2), all-zero-zeroclrrep+1)'];
+            b = [linspace(nadaColor.darkneg(3), nadaColor.lightneg(3), zero-1)'; ...
                 repmat(nadaColor.zeroclr(3),zeroclrrep,1); ...
-                linspace(nadaColor.lightpos(3), nadaColor.darkpos(3), all-zero-zeroclrrep)'];
+                linspace(nadaColor.lightpos(3), nadaColor.darkpos(3), all-zero-zeroclrrep+1)'];
             rgbclr = [r g b];
         elseif neg>0 %if only one negative value
             rgbclr = repmat(nadaColor.darkneg,all,1);
@@ -51,6 +51,10 @@ if plotInfo.customColors.customColor
             rgbclr = repmat(nadaColor.darkpos,all,1);
         else %if only zero values
             rgbclr = repmat(nadaColor.zeroclr,all,1);
+        end
+        valspace = linspace(clims(1),clims(2),all);  %the values mathching the colormap
+        if abs(valspace(zero)) == valspace(zero+1) %if the values are symetrical around zero 
+            rgbclr(zero+1,:) = nadaColor.zeroclr;  %make both zero, to be sure, zero is plotted with the right color
         end
         if nadaColor.SuperMax
             rgbclr(end+1,:) = nadaColor.supermaxcolor; %add the supermax color to the end
