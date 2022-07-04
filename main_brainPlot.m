@@ -20,7 +20,9 @@ function [brainsurface] = main_brainPlot(vals_channels, mni_channels,names_chann
 %% set path to this script
 dir_toolbox = what('SEEG-visualization');     % folder 'visualization_SEEG' MUST be in pathdef.m
 if isempty(dir_toolbox) 
-    error('Path to toolbox required. Add it to pathdef.m !'); 
+    error('Path to toolbox SEEG-visualization required. Add it please to pathdef.m '); 
+elseif numel(dir_toolbox) > 1
+    error('Path to toolbox SEEG-visualization found two times  in pathdef.m. Please remove one of them'); 
 end
 %addpath(genpath(dir_toolbox.path)); %kamil - path to be saved manually
 %dir_curr = pwd;
